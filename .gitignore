@@ -1,0 +1,25 @@
+# Model checkpoints and weights
+models/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Conda / virtual environments
+.venv/
+venv/
+env/
+
+# Local environment variables and credentials
+.env
+.env.*
+
+# Generated benchmark outputs
+results/raw/
+results/processed/
+results/figures/
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store

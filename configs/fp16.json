@@ -1,0 +1,9 @@
+{
+  "model_path": "/home/cdacapp01/wk-ganesh/multi-modal/inference/InferX/models/Qwen2.5-1.5B-Instruct",
+  "revision": null,
+  "precision": "fp16",
+  "max_new_tokens": 128,
+  "warmup_runs": 2,
+  "benchmark_runs": 5,
+  "seed": 42
+}

@@ -1,0 +1,3 @@
+{"id":"short_01","prompt":"Explain GPU inference optimization in three concise bullet points."}
+{"id":"medium_01","prompt":"Explain how mixed precision, quantization, and KV caching improve large language model inference. Discuss the benefit and trade-off of each technique."}
+{"id":"long_01","prompt":"Write a detailed technical explanation of large language model inference. Cover tokenization, prefill, autoregressive decoding, attention, KV cache, GPU memory, batching, quantization, throughput, latency, and quality evaluation. Include practical examples and explain when each optimization is useful."}
