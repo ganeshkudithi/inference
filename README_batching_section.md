@@ -1,5 +1,5 @@
 ## Static Batching Benchmark
-
+https://machinelearningmastery.com/static-vs-dynamic-vs-continuous-batching-in-llm-inference/
 ### Environment and configuration
 
 - **Model:** Qwen2.5-1.5B-Instruct (loaded from the local model directory)
