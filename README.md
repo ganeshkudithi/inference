@@ -1,330 +1,354 @@
-# InferX — LLM Inference Optimization and Benchmarking
+# InferX
 
-## 1. Project Overview
+**InferX** is an experimental framework for benchmarking and evaluating
+Large Language Model (LLM) inference optimizations on GPU systems.
 
-InferX is a benchmarking framework for evaluating and optimizing Large Language Model (LLM) inference performance. The project focuses on measuring inference latency, time to first token (TTFT), output throughput, and GPU memory consumption under different model configurations and workloads.
+The project currently uses **Qwen2.5-1.5B-Instruct** on an NVIDIA A100
+80GB GPU to study inference performance under different numerical
+precisions and static batch sizes. The objective is to measure
+throughput, generation latency, and GPU memory consumption while
+maintaining reliable output behavior.
 
-The initial implementation uses Hugging Face Transformers and a locally stored Qwen2.5-1.5B-Instruct model. The framework is being developed incrementally to support precision comparisons, workload analysis, batching experiments, and optimized inference engines.
+> **Project status:** Baseline inference and initial static-batching
+> benchmarks have been implemented. Further validation and optimization
+> experiments are in progress.
 
-### Objectives
+## Objectives
 
-- Establish a reproducible baseline for LLM inference.
-- Compare BF16 and FP16 inference performance.
-- Measure TTFT, end-to-end latency, output throughput, and GPU memory usage.
-- Investigate the impact of input and output token lengths.
-- Evaluate batching and concurrent-request workloads.
-- Explore quantization and optimized inference engines.
-- Generate reproducible benchmark results for analysis and reporting.
+-   Establish a reproducible LLM inference baseline.
+-   Compare numerical precision modes such as BF16, FP16, and FP32.
+-   Evaluate static batching at different batch sizes.
+-   Measure generation throughput, latency, and GPU memory usage.
+-   Validate generated token sequences against a batch-size-1 reference.
+-   Extend the benchmark framework to study additional optimizations,
+    including quantization and KV-cache-related techniques.
 
-## 2. Hardware and Software Environment
+## Current environment
 
-### Hardware
+  Component               Configuration
+  ----------------------- ---------------------------
+  Model                   Qwen2.5-1.5B-Instruct
+  GPU                     NVIDIA A100 80GB PCIe
+  CUDA                    12.4
+  PyTorch                 2.6.0+cu124
+  Transformers            4.57.1
+  Python                  3.11
+  Execution environment   Slurm-managed GPU cluster
 
-| Component | Configuration |
-|---|---|
-| GPU | NVIDIA A100 80GB PCIe |
-| GPU memory capacity | 80 GB |
-| GPU driver | 550.54.15 |
-| CUDA reported by NVIDIA-SMI | 12.4 |
-| Cluster scheduler | Slurm |
+The model is loaded from a local directory. The current cluster workflow
+is designed for offline execution.
 
-### Software
+## Repository structure
 
-| Component | Version |
-|---|---|
-| Operating system | AlmaLinux 8.9 |
-| Python | 3.11.17 |
-| PyTorch | 2.6.0+cu124 |
-| Transformers | 4.57.1 |
-| Environment manager | Conda |
-
-The benchmark uses the existing PyTorch CUDA installation. A separate CUDA compiler (`nvcc`) is not required for the current Transformers-based implementation.
-
-## 3. Model and Workloads
-
-### Model
-
-- Model: Qwen2.5-1.5B-Instruct
-- Hugging Face identifier: `Qwen/Qwen2.5-1.5B-Instruct`
-- Model location: `models/Qwen2.5-1.5B-Instruct`
-- Loading mode: Local files only
-- Decoding: Greedy decoding
-- KV cache: Enabled
-
-The model is stored locally to support execution on the offline compute cluster.
-
-### Workload Dataset
-
-The initial workload dataset is stored in:
-
-`workloads/prompts.jsonl`
-
-Each JSONL record contains a prompt identifier and its corresponding text.
-
-The initial workloads are:
-
-| Workload | Input tokens | Generated tokens |
-|---|---:|---:|
-| Short | 40 | 50 |
-| Medium | 57 | 128 |
-| Long | 84 | 128 |
-
-The configured maximum output length is 128 tokens. The short workload terminates after generating 50 tokens, while the medium and long workloads reach the configured limit.
-
-Token counts refer to the model's formatted input, including any chat-template tokens.
-
-## 4. Project Structure
-
-```text
+``` text
 InferX/
 ├── configs/
 │   ├── baseline.json
 │   ├── bf16.json
 │   └── fp16.json
 ├── models/
-│   └── Qwen2.5-1.5B-Instruct/
-├── src/
-├── workloads/
-│   └── prompts.jsonl
+│   └── Qwen2.5-1.5B-Instruct/   # Local model files; not committed
 ├── scripts/
 │   ├── run_baseline.py
-│   └── benchmark_latency.py
+│   ├── benchmark_latency.py
+│   ├── benchmark_batch.py
+│   ├── validate_batch_correctness.py
+│   ├── analyze_batch_results.py
+│   ├── inspect_environment.py
+│   └── test_cuda.py
+├── workloads/
+│   └── prompts.jsonl
 ├── results/
-│   ├── raw/
-│   ├── processed/
-│   └── figures/
+│   ├── raw/                     # Raw benchmark CSVs; not committed
+│   ├── processed/               # Aggregated results; not committed
+│   └── figures/                 # Generated plots; not committed
+├── src/
 ├── tests/
 ├── docs/
-└── README.md
+├── README.md
+└── requirements-lock.txt
 ```
 
-Additional scripts and configuration files may be added as the project evolves.
+## Setup
 
-## 5. Environment Setup
+### 1. Clone the repository
 
-Activate the Conda environment:
+``` bash
+git clone https://github.com/ganeshkudithi/inference.git
+cd inference
+```
 
-```bash
+### 2. Activate the environment
+
+Activate the Conda environment configured for the project:
+
+``` bash
 conda activate inferx
 ```
 
-Navigate to the project directory:
+Install dependencies from the project's dependency file if required:
 
-```bash
-cd /home/cdacapp01/wk-ganesh/multi-modal/inference/InferX
+``` bash
+pip install -r requirements-lock.txt
 ```
 
-Enable offline model loading:
+### 3. Configure the local model path
 
-```bash
+Download or copy the model into:
+
+``` text
+models/Qwen2.5-1.5B-Instruct/
+```
+
+The model directory is intentionally excluded from Git because model
+weights are large. Update the `model_path` field in the JSON
+configuration files if your local path differs.
+
+For offline execution:
+
+``` bash
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 ```
 
-Verify the environment:
+## Running on a Slurm GPU cluster
 
-```bash
-python -c "import torch, transformers; print('PyTorch:', torch.__version__); print('Transformers:', transformers.__version__); print('CUDA available:', torch.cuda.is_available())"
+Run GPU workloads only inside a GPU allocation provided by your cluster.
+Do not launch GPU benchmarks on a login node.
+
+An example interactive allocation is:
+
+``` bash
+salloc --partition=<gpu_partition> --gres=gpu:1 --time=01:00:00
 ```
 
-Check GPU availability:
+Partition and resource options vary by cluster; use the options
+specified by your system administrator.
 
-```bash
+After the allocation starts, verify the assigned GPU:
+
+``` bash
+echo "$SLURM_JOB_ID"
+echo "$CUDA_VISIBLE_DEVICES"
 nvidia-smi
 ```
 
-Run GPU benchmarks only through an authorized GPU allocation on the Slurm cluster.
+Activate the environment and move to the project directory before
+running experiments.
 
-## 6. Benchmark Configuration
+## Benchmark methodology
 
-The benchmark configuration is stored in JSON files.
+### Numerical precision
 
-Example: `configs/bf16.json`
+The framework supports precision configurations through JSON files. The
+current experiments include BF16 and FP32, with FP16 also available in
+the configuration workflow.
 
-```json
-{
-  "model_path": "/home/cdacapp01/wk-ganesh/multi-modal/inference/InferX/models/Qwen2.5-1.5B-Instruct",
-  "revision": null,
-  "precision": "bf16",
-  "max_new_tokens": 128,
-  "warmup_runs": 2,
-  "benchmark_runs": 5,
-  "seed": 42
-}
-```
+Precision comparisons should use the same model, prompts, generation
+settings, request count, and measurement procedure. Record the GPU and
+software environment with every run.
 
-Example: `configs/fp16.json`
+### Static batching
 
-The FP16 configuration uses the same model, prompts, maximum output length, warm-up count, and benchmark-run count, with `"precision": "fp16"`.
+Static batching groups a fixed number of independent prompts into one
+model-generation call.
 
-Configuration parameters:
+For example, with 24 requests:
 
-| Parameter | Description |
-|---|---|
-| `model_path` | Path to the local model directory |
-| `revision` | Optional model revision metadata |
-| `precision` | Inference precision: BF16, FP16, or FP32 |
-| `max_new_tokens` | Maximum number of generated tokens |
-| `warmup_runs` | Number of warm-up generations per prompt |
-| `benchmark_runs` | Number of measured trials per prompt |
-| `seed` | Reserved configuration field; not currently used to control the benchmark |
+    Batch size   Number of generation calls
+  ------------ ----------------------------
+             1                           24
+             2                           12
+             4                            6
+             8                            3
 
-The latency benchmark loads the model once, performs the configured warm-ups for each prompt, and then executes the measured trials.
+A larger batch can improve GPU utilization and aggregate throughput. It
+can also increase memory use and may affect individual request latency.
+Static batching in this project is an offline fixed-workload experiment;
+it is not a measurement of a production online-serving scheduler.
 
-## 7. Running the Benchmarks
+### Metrics
 
-### 7.1 Baseline Benchmark
+The benchmark scripts record or derive metrics including:
 
-Validate the script:
+-   **Throughput:** generated tokens divided by generation time.
+-   **Batch latency:** elapsed time for a batch-generation call.
+-   **Amortized latency per request:** batch latency divided by the
+    number of requests in that batch.
+-   **Peak allocated GPU memory:** maximum memory allocated by PyTorch
+    during the measured run.
+-   **Peak reserved GPU memory:** maximum memory reserved by PyTorch.
+-   **Correctness:** generated token sequences compared with the
+    batch-size-1 reference.
 
-```bash
-python -m py_compile scripts/run_baseline.py
-```
+Timing boundaries matter. The static-batching benchmark measures
+generation after tokenization and input transfer; model loading and
+those preparation steps are not included in generation time. Do not
+compare these timings directly with end-to-end serving latency.
 
-Run the baseline:
+## Running experiments
 
-```bash
+### Baseline inference
+
+``` bash
 python scripts/run_baseline.py --config configs/bf16.json
 ```
 
-The baseline benchmark records end-to-end generation latency, output throughput, and GPU memory statistics.
+### Latency benchmark
 
-### 7.2 Latency Benchmark
-
-Validate the latency benchmark:
-
-```bash
-python -m py_compile scripts/benchmark_latency.py
-```
-
-Run BF16:
-
-```bash
+``` bash
 python scripts/benchmark_latency.py --config configs/bf16.json
 ```
 
-Run FP16:
+### Static-batching benchmark
 
-```bash
-python scripts/benchmark_latency.py --config configs/fp16.json
+The following example tests batch sizes 1, 2, 4, and 8 using 24 requests
+per run:
+
+``` bash
+python scripts/benchmark_batch.py \
+  --config configs/bf16.json \
+  --batch-sizes 1 2 4 8 \
+  --requests-per-run 24
 ```
 
-With three prompts and five measured runs per prompt, each latency benchmark produces 15 measured records.
+For an FP32 experiment, use the FP32 configuration file if one is
+available in your working copy, or create a configuration with
+`"precision": "fp32"` and the correct local model path.
 
-### 7.3 Output Files
+### Correctness validation
 
-Raw CSV results are saved in:
-
-`results/raw/`
-
-Example result files:
-
-```text
-results/raw/latency_bf16_20261025T185359Z.csv
-results/raw/latency_fp16_20261025T185540Z.csv
+``` bash
+python scripts/validate_batch_correctness.py \
+  --config configs/bf16.json \
+  --batch-sizes 1 2 4 8 \
+  --requests-per-run 24
 ```
 
-Each execution creates a timestamped result file. Existing raw results should be preserved for reproducibility.
+The validator compares each request's generated token IDs against its
+batch-size-1 reference. A throughput improvement should not be treated
+as a successful optimization until output behavior has also been
+checked.
 
-## 8. Performance Metrics
+### Analyze benchmark results
 
-| Metric | Definition |
-|---|---|
-| TTFT | Time from starting generation until the first non-empty decoded text chunk is received |
-| End-to-end latency | Total duration of the measured generation request |
-| Output throughput | Number of generated tokens divided by end-to-end latency |
-| Peak allocated memory | Maximum GPU memory allocated by PyTorch during the measured generation |
-| Peak reserved memory | Maximum GPU memory reserved by PyTorch's caching allocator |
-| Mean latency | Arithmetic mean of measured request latencies |
-| Standard deviation | Measure of variation across repeated trials |
+``` bash
+python scripts/analyze_batch_results.py
+```
 
-**Measurement limitations**
+Check the script's command-line help if your local version requires an
+input CSV or additional arguments:
 
-- TTFT currently measures the first non-empty streamed text chunk, not the exact execution time of the first generated token.
-- Average inter-token latency is an approximation and is not based on individual token timestamps.
-- Throughput is calculated from generated tokens divided by end-to-end latency. It is not pure decode-only throughput.
-- The current benchmark executes requests sequentially. It does not measure concurrent serving or continuous batching.
-- Peak memory values represent PyTorch allocator measurements, not total GPU memory usage by every process.
-- Results depend on GPU utilization, clock behavior, workload characteristics, software versions, and measurement overhead.
+``` bash
+python scripts/analyze_batch_results.py --help
+```
 
-## 9. Experimental Results
+## Experimental results
 
-### 9.1 BF16 Baseline
+### FP32 static-batching benchmark
 
-Hardware: NVIDIA A100 80GB PCIe
+The following results are from a five-run FP32 static-batching
+experiment on an NVIDIA A100 80GB PCIe GPU. Each run processed 24
+requests. The workload generated 2,448 tokens in total per run.
 
-Model: Qwen2.5-1.5B-Instruct
+  -----------------------------------------------------------------------
+         Batch size         Aggregate   Generation time Speedup vs. batch
+                           throughput               (s)                 1
+                           (tokens/s)                   
+  ----------------- ----------------- ----------------- -----------------
+                  1             49.66             49.30             1.00×
 
-| Workload | Mean TTFT | Mean latency | Mean throughput | Peak allocated memory |
-|---|---:|---:|---:|---:|
-| Short | 40.2 ms | 0.9423 s | 53.0632 tokens/s | 2.8958 GiB |
-| Medium | 39.8 ms | 2.4375 s | 52.5239 tokens/s | 2.8983 GiB |
-| Long | 39.8 ms | 2.4424 s | 52.4130 tokens/s | 2.8990 GiB |
+                  2             71.40             34.29             1.44×
 
-Five measured trials were collected for each workload, after two warm-up generations per prompt.
+                  4            141.17             17.34             2.84×
 
-### 9.2 BF16 vs FP16
+                  8            272.46              8.99             5.49×
+  -----------------------------------------------------------------------
 
-Overall averages across the three workloads:
+Throughput is calculated as total generated tokens divided by total
+generation time. The speedup is calculated relative to batch size 1.
 
-| Metric | BF16 | FP16 |
-|---|---:|---:|
-| Mean TTFT | 39.9 ms | 40.1 ms |
-| Mean end-to-end latency | 1.9407 s | 1.9362 s |
-| Mean throughput | 52.6667 tokens/s | 52.8380 tokens/s |
-| Peak allocated GPU memory | 2.899 GiB | 2.899 GiB |
+#### GPU memory
 
-Relative to BF16, FP16 showed:
+    Batch size   Peak allocated (GiB)   Peak reserved (GiB)
+  ------------ ---------------------- ---------------------
+             1                   5.78                  5.93
+             2                   5.80                  5.95
+             4                   5.83                  5.98
+             8                   5.89                  6.03
 
-- TTFT: approximately 0.31% higher.
-- Mean end-to-end latency: approximately 0.23% lower.
-- Mean throughput: approximately 0.33% higher.
-- Peak allocated GPU memory: effectively unchanged at the reported precision.
+#### Observations
 
-These differences are small and are not sufficient to establish a meaningful performance advantage for either precision. Further repetitions and controlled experiments are required.
+-   Aggregate throughput increased with batch size in this workload.
+-   Batch size 8 achieved approximately 5.49× the throughput of batch
+    size 1.
+-   Peak allocated memory increased modestly from approximately 5.78 GiB
+    to 5.89 GiB between batch sizes 1 and 8.
+-   These measurements describe this model, GPU, workload, and benchmark
+    setup; they should not be generalized to other models or hardware
+    without further experiments.
 
-BF16 remains the reference configuration for subsequent experiments.
+**Correctness note:** The performance CSV establishes timing, token
+counts, and memory measurements. It does not by itself establish exact
+token-level equivalence between FP32 and BF16, or correctness for every
+batch size. Consult the corresponding correctness-validation output
+before making such claims.
 
-## 10. Current Project Status
+### Preliminary BF16 comparison
 
-### Completed
+Earlier BF16 measurements showed approximately 54.52, 68.26, 134.47, and
+278.92 tokens/s for batch sizes 1, 2, 4, and 8, respectively. The
+earlier BF16 runs did not always generate the same total number of
+tokens across batch sizes. Therefore, treat direct precision comparisons
+at batch sizes 2 and 4 as preliminary until the workload and output
+lengths are controlled and correctness is revalidated.
 
-- [x] Created the InferX project structure.
-- [x] Configured the Conda environment and PyTorch CUDA support.
-- [x] Loaded the local Qwen2.5-1.5B-Instruct model.
-- [x] Implemented a baseline inference benchmark.
-- [x] Collected initial BF16 and FP16 measurements.
-- [x] Implemented repeated latency measurements.
-- [x] Recorded TTFT, end-to-end latency, output throughput, and GPU memory.
-- [x] Generated CSV result files for analysis.
+## Reproducibility notes
 
-### Planned
+For each experiment, retain:
 
-- [ ] Improve token-level timing and TTFT measurement accuracy.
-- [ ] Expand workloads across input and output token lengths.
-- [ ] Implement controlled batch-size experiments.
-- [ ] Evaluate concurrent-request throughput and latency.
-- [ ] Investigate quantization and attention optimizations.
-- [ ] Compare Transformers with an optimized inference engine, subject to offline dependency availability.
-- [ ] Automate experiment summaries and performance plots.
-- [ ] Add regression tests and reproducibility checks.
+1.  The exact configuration file.
+2.  The raw per-run CSV output.
+3.  The correctness-validation summary and details.
+4.  The model identifier and local model revision, where available.
+5.  GPU model, driver, CUDA, PyTorch, and Transformers versions.
+6.  Workload prompts and generation parameters.
 
-## 11. Reproducibility
+Use consistent prompts, request ordering, generation limits, EOS and
+padding configuration, and measurement boundaries when comparing
+experiments.
 
-For each experiment, record:
+## Current limitations
 
-- Model identifier and local checkpoint.
-- GPU model and allocation details.
-- PyTorch, Transformers, and CUDA versions.
-- Inference precision and generation parameters.
-- Prompt dataset and token counts.
-- Warm-up and measured-run counts.
-- Raw CSV output and experiment configuration.
+-   The current workload contains a small set of prompts and should be
+    expanded for broader evaluation.
+-   Static batching does not model dynamic request arrivals or
+    continuous batching.
+-   Correctness differences observed in earlier BF16 batch tests require
+    further investigation.
+-   The current benchmark is not a full production-serving evaluation.
+-   Quantization and additional inference optimizations remain future
+    work.
 
-Run BF16 and FP16 under equivalent conditions and avoid competing GPU workloads during measurements whenever possible.
+## Planned work
 
-Preserve raw CSV files and derive summary tables and plots from those files rather than modifying the original measurements.
+-   Expand the prompt dataset and workload diversity.
+-   Complete precision and batch-size correctness validation.
+-   Investigate padding, position-ID, and batch-composition effects on
+    generated outputs.
+-   Add quantization experiments and compare memory, throughput, and
+    output quality.
+-   Study KV-cache behavior and memory usage.
+-   Explore continuous batching and request-level latency metrics.
+-   Consolidate results into reproducible tables and plots.
 
-## 12. Future Direction
+## Contributing
 
-InferX aims to evolve into a reproducible LLM inference benchmarking and optimization framework that compares inference configurations under controlled workloads. The long-term goal is to identify the trade-offs between latency, throughput, GPU memory consumption, and output quality, and to produce evidence-based recommendations for efficient LLM deployment.
+Contributions and suggestions are welcome. For reproducible results,
+include the configuration, workload, environment details, raw
+measurements, and correctness results with any benchmark report.
+
+## License
+
+Add the license and usage terms applicable to this repository and any
+included code before public distribution.
