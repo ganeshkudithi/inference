@@ -137,17 +137,20 @@ def main():
     model_load_seconds = time.perf_counter() - load_start
 
     # Deterministic generation for reproducible comparisons.
+    # model.generation_config.do_sample = False
+
+    # eos_value = model.generation_config.eos_token_id
+    # if eos_value is None:
+    #     eos_value = tokenizer.eos_token_id
+    # if eos_value is None:
+    #     eos_ids = set()
+    # elif isinstance(eos_value, int):
+    #     eos_ids = {eos_value}
+    # else:
+    #     eos_ids = set(eos_value)
     model.generation_config.do_sample = False
 
-    eos_value = model.generation_config.eos_token_id
-    if eos_value is None:
-        eos_value = tokenizer.eos_token_id
-    if eos_value is None:
-        eos_ids = set()
-    elif isinstance(eos_value, int):
-        eos_ids = {eos_value}
-    else:
-        eos_ids = set(eos_value)
+    eos_ids = {tokenizer.eos_token_id}
 
     formatted_prompts = []
     for item in prompts:
@@ -203,8 +206,10 @@ def main():
                     **encoded,
                     max_new_tokens=max_new_tokens,
                     do_sample=False,
+                    num_beams=1,
                     use_cache=True,
                     pad_token_id=tokenizer.pad_token_id,
+                    eos_token_id=tokenizer.eos_token_id,
                 )
 
         # Warm up a representative batch before collecting measurements.
