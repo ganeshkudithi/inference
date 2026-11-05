@@ -36,6 +36,18 @@ def main():
         description="Benchmark static batching for LLM inference."
     )
     parser.add_argument("--config", default="configs/bf16.json")
+    parser.add_argument(
+        "--attention",
+        choices=["sdpa", "eager"],
+        default="sdpa",
+        help="Attention implementation.",
+    )
+    parser.add_argument(
+        "--tf32",
+        choices=["on", "off"],
+        default="off",
+        help="Enable or disable TF32 for supported FP32 operations.",
+    )
     parser.add_argument("--prompts", default="workloads/prompts.jsonl")
     parser.add_argument("--output-dir", default="results/raw")
     parser.add_argument(
@@ -51,6 +63,11 @@ def main():
     args = parser.parse_args()
 
     config = load_json(args.config)
+    # Configure TF32 for reproducible precision experiments.
+    tf32_enabled = args.tf32 == "on"
+
+    torch.backends.cuda.matmul.allow_tf32 = tf32_enabled
+    torch.backends.cudnn.allow_tf32 = tf32_enabled
     model_path = Path(config["model_path"]).expanduser().resolve()
     precision = config.get("precision", "bf16").lower()
     max_new_tokens = int(config.get("max_new_tokens", 128))
@@ -109,6 +126,8 @@ def main():
     print("Model:", model_path)
     print("GPU:", torch.cuda.get_device_name(0))
     print("Precision:", precision)
+    print("Attention:", args.attention)
+    print("TF32:", "ON" if tf32_enabled else "OFF")
     print("Batch sizes:", args.batch_sizes)
     print("Requests per measured run:", args.requests_per_run)
     print("Warm-up runs:", warmup_runs)
@@ -131,7 +150,15 @@ def main():
         device_map={"": 0},
         local_files_only=True,
         trust_remote_code=False,
+        attn_implementation=args.attention,
     )
+    # model = AutoModelForCausalLM.from_pretrained(
+    #     str(model_path),
+    #     dtype=dtype,
+    #     device_map={"": 0},
+    #     local_files_only=True,
+    #     trust_remote_code=False,
+    # )
     model.eval()
     sync_gpu()
     model_load_seconds = time.perf_counter() - load_start

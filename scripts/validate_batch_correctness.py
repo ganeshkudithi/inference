@@ -7,6 +7,8 @@ from pathlib import Path
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+torch.backends.cuda.matmul.allow_tf32 = False
+torch.backends.cudnn.allow_tf32 = False
 
 
 def load_json(path):
@@ -21,6 +23,12 @@ def main():
     parser.add_argument("--prompts", default="workloads/prompts.jsonl")
     parser.add_argument("--batch-sizes", nargs="+", type=int, default=[1, 2, 4, 8])
     parser.add_argument("--requests", type=int, default=24)
+    parser.add_argument(
+        "--attention",
+        choices=["sdpa", "eager"],
+        default="sdpa",
+        help="Attention implementation to use.",
+    )
     args = parser.parse_args()
 
     if not torch.cuda.is_available():
@@ -72,14 +80,20 @@ def main():
 
     # Match the existing benchmark's padding convention.
     tokenizer.padding_side = "left"
-
     model = AutoModelForCausalLM.from_pretrained(
         str(model_path),
-        dtype=dtypes[precision],
+        dtype=dtypes,
         device_map={"": 0},
         local_files_only=True,
-        trust_remote_code=False,
+        attn_implementation=args.attention,
     )
+    # model = AutoModelForCausalLM.from_pretrained(
+    #     str(model_path),
+    #     dtype=dtypes[precision],
+    #     device_map={"": 0},
+    #     local_files_only=True,
+    #     trust_remote_code=False,
+    # )
     model.eval()
 
     # eos_value = model.generation_config.eos_token_id
@@ -127,6 +141,7 @@ def main():
     print("Requests:", len(requests))
     print("Batch sizes:", args.batch_sizes)
     print("Max new tokens:", max_new_tokens)
+    print("Attention:", args.attention)
 
     for batch_size in args.batch_sizes:
         print(f"\nValidating batch size {batch_size}")
