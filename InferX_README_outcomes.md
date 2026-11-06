@@ -147,8 +147,10 @@ Batch size 8 achieved approximately **5.45×** the aggregate throughput
 of batch size 1.
 
 ### Batch Size vs Mean Aggregate Throughput
+<p align="center">
+  <img src="results/figures/Batch_Size_vs_Mean_Aggregate_Throughput.png" width="550">
+</p>
 
-![Batch Size vs Throughput](results/figures/Batch_Size_vs_Mean_Aggregate_Throughput.png)
 
 **Figure 1:** Mean aggregate inference throughput for different batch sizes.
 
@@ -183,7 +185,7 @@ Observed throughput:
 | 8 | 271.33 | 276.91 | +2.06% |
 
 <p align="center">
-  <img src="results/figures/ImpactofTF32onInferenceThroughput.png" width="750">
+  <img src="results/figures/ImpactofTF32onInferenceThroughput.png" width="550">
 </p>
 
 
@@ -212,7 +214,7 @@ Repeated FP32, TF32 OFF results:
 | 8 | ~269.50 | ~269.37 | ~0.05% |
 
 <p align="center">
-  <img src="results/figures/SDPAvsEagerAttentionThroughput.png" width="750">
+  <img src="results/figures/SDPAvsEagerAttentionThroughput.png" width="550">
 </p>
 
 <p align="center">
