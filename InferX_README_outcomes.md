@@ -150,9 +150,12 @@ of batch size 1.
 <p align="center">
   <img src="results/figures/Batch_Size_vs_Mean_Aggregate_Throughput.png" width="550">
 </p>
+<p align="center">
+  <em>Figure: Mean aggregate inference throughput for different batch sizes.</em>
+</p>
 
 
-**Figure 1:** Mean aggregate inference throughput for different batch sizes.
+
 
 A separate BF16 experiment measured:
 
