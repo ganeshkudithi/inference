@@ -182,6 +182,11 @@ Observed throughput:
 | 4 | 139.75 | 138.58 | -0.83% |
 | 8 | 271.33 | 276.91 | +2.06% |
 
+<p align="center">
+  <img src="results/figures/ImpactofTF32onInferenceThroughput.png" width="750">
+</p>
+
+
 Exact-token matches against the batch-size-1 reference:
 
 | Batch Size | TF32 OFF | TF32 ON |
