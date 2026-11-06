@@ -136,12 +136,12 @@ these measurements. The observed differences are small.
 
 Repeated FP32 benchmark summaries using SDPA and TF32 OFF:
 
-    Batch size   Mean aggregate throughput
-  ------------ ---------------------------
-             1            \~49.45 tokens/s
-             2            \~70.71 tokens/s
-             4           \~140.52 tokens/s
-             8           \~269.50 tokens/s
+| Batch Size | Mean Aggregate Throughput |
+|-----------:|--------------------------:|
+| 1          | ~49.45 tokens/s |
+| 2          | ~70.71 tokens/s |
+| 4          | ~140.52 tokens/s |
+| 8          | ~269.50 tokens/s |
 
 Batch size 8 achieved approximately **5.45×** the aggregate throughput
 of batch size 1.
