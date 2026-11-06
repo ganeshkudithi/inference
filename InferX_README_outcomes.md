@@ -212,7 +212,7 @@ Repeated FP32, TF32 OFF results:
 | 8 | ~269.50 | ~269.37 | ~0.05% |
 
 <p align="center">
-  <img src="figures/sdpa_vs_eager.png" width="750">
+  <img src="results/figures/SDPAvsEagerAttentionThroughput.png" width="750">
 </p>
 
 <p align="center">
