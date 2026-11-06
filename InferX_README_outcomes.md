@@ -121,10 +121,10 @@ implementation. They are not universal performance guarantees.
 
 Representative single-request throughput observations:
 
-  Precision             Short          Medium            Long
+ | Precision |            Short  |        Medium  |          Long |
   ----------- --------------- --------------- ---------------
-  BF16          \~53.44 tok/s   \~53.73 tok/s   \~53.62 tok/s
-  FP16          \~52.88 tok/s   \~53.07 tok/s   \~52.99 tok/s
+  | BF16       |   \~53.44 tok/s  | \~53.73 tok/s  | \~53.62 tok/s |
+  | FP16       |   \~52.88 tok/s  | \~53.07 tok/s  | \~52.99 tok/s |
 
 An earlier BF16 run measured approximately 52.3--52.8 tok/s, indicating
 some run-to-run variation.
