@@ -146,14 +146,20 @@ Repeated FP32 benchmark summaries using SDPA and TF32 OFF:
 Batch size 8 achieved approximately **5.45×** the aggregate throughput
 of batch size 1.
 
+### Batch Size vs Mean Aggregate Throughput
+
+![Batch Size vs Throughput](figures/batch_throughput.png)
+
+**Figure 1:** Mean aggregate inference throughput for different batch sizes.
+
 A separate BF16 experiment measured:
 
-    Batch size        Throughput
-  ------------ -----------------
-             1    53.68 tokens/s
-             2    66.62 tokens/s
-             4   131.51 tokens/s
-             8   269.43 tokens/s
+| Batch Size | Throughput |
+|-----------:|-----------:|
+| 1 | 53.68 tokens/s |
+| 2 | 66.62 tokens/s |
+| 4 | 131.51 tokens/s |
+| 8 | 269.43 tokens/s |
 
 **Outcome:** Static batching substantially improves aggregate throughput
 in this workload. Some BF16 runs generated different total token counts
@@ -169,21 +175,21 @@ arrivals.
 
 Observed throughput:
 
-    Batch size       TF32 OFF        TF32 ON   Change with TF32 ON
-  ------------ -------------- -------------- ---------------------
-             1    49.65 tok/s    48.40 tok/s                -2.51%
-             2    71.22 tok/s    68.31 tok/s                -4.07%
-             4   139.75 tok/s   138.58 tok/s                -0.83%
-             8   271.33 tok/s   276.91 tok/s                +2.06%
+| Batch Size | TF32 OFF (tok/s) | TF32 ON (tok/s) | Change with TF32 ON |
+|-----------:|----------------:|---------------:|--------------------:|
+| 1 | 49.65 | 48.40 | -2.51% |
+| 2 | 71.22 | 68.31 | -4.07% |
+| 4 | 139.75 | 138.58 | -0.83% |
+| 8 | 271.33 | 276.91 | +2.06% |
 
 Exact-token matches against the batch-size-1 reference:
 
-    Batch size   TF32 OFF   TF32 ON
-  ------------ ---------- ---------
-             1      24/24     24/24
-             2      24/24     24/24
-             4      24/24     24/24
-             8      24/24     16/24
+| Batch Size | TF32 OFF | TF32 ON |
+|-----------:|---------:|--------:|
+| 1 | 24/24 | 24/24 |
+| 2 | 24/24 | 24/24 |
+| 4 | 24/24 | 24/24 |
+| 8 | 24/24 | 16/24 |
 
 **Outcome:** TF32 did not provide a consistent throughput improvement.
 TF32 ON at batch size 8 reduced exact-match consistency to 16/24. FP32
@@ -193,12 +199,12 @@ with TF32 OFF is the safer reference setting for the current workload.
 
 Repeated FP32, TF32 OFF results:
 
-    Batch size             SDPA            Eager   SDPA improvement
-  ------------ ---------------- ---------------- ------------------
-             1    \~49.45 tok/s    \~45.21 tok/s             \~9.4%
-             2    \~70.71 tok/s    \~70.05 tok/s             \~0.9%
-             4   \~140.52 tok/s   \~139.00 tok/s             \~1.1%
-             8   \~269.50 tok/s   \~269.37 tok/s            \~0.05%
+| Batch Size | SDPA (tok/s) | Eager (tok/s) | SDPA Improvement |
+|-----------:|-------------:|-------------:|-----------------:|
+| 1 | ~49.45 | ~45.21 | ~9.4% |
+| 2 | ~70.71 | ~70.05 | ~0.9% |
+| 4 | ~140.52 | ~139.00 | ~1.1% |
+| 8 | ~269.50 | ~269.37 | ~0.05% |
 
 FP32 correctness validation produced 24/24 exact matches for both SDPA
 and Eager at batch sizes 1, 2, 4, and 8.
