@@ -187,6 +187,9 @@ Observed throughput:
 <p align="center">
   <img src="results/figures/ImpactofTF32onInferenceThroughput.png" width="550">
 </p>
+<p align="center">
+  <em>Figure: Throughput comparison between TF32 OFF and TF32 ON across different batch sizes.</em>
+</p>
 
 
 Exact-token matches against the batch-size-1 reference:
