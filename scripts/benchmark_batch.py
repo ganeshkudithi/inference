@@ -32,8 +32,15 @@ def count_generated_tokens(sequence, input_length, eos_ids):
 
 
 def main():
+
     parser = argparse.ArgumentParser(
         description="Benchmark static batching for LLM inference."
+    )
+    parser.add_argument(
+        "--kv-cache",
+        choices=["on", "off"],
+        default="on",
+        help="Enable or disable KV caching.",
     )
     parser.add_argument("--config", default="configs/bf16.json")
     parser.add_argument(
@@ -61,7 +68,7 @@ def main():
              "by every batch size.",
     )
     args = parser.parse_args()
-
+    use_cache = args.kv_cache == "on"
     config = load_json(args.config)
     # Configure TF32 for reproducible precision experiments.
     tf32_enabled = args.tf32 == "on"
@@ -234,7 +241,7 @@ def main():
                     max_new_tokens=max_new_tokens,
                     do_sample=False,
                     num_beams=1,
-                    use_cache=True,
+                    use_cache=use_cache,
                     pad_token_id=tokenizer.pad_token_id,
                     eos_token_id=tokenizer.eos_token_id,
                 )
@@ -281,6 +288,9 @@ def main():
                         timezone.utc
                     ).isoformat(),
                     "precision": precision,
+                    "attention": args.attention,
+                    "tf32": args.tf32,
+                    "kv_cache": args.kv_cache,
                     "gpu": torch.cuda.get_device_name(0),
                     "batch_size": batch_size,
                     "run": run_idx,
