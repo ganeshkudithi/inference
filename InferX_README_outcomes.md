@@ -148,7 +148,7 @@ of batch size 1.
 
 ### Batch Size vs Mean Aggregate Throughput
 
-![Batch Size vs Throughput](figures/batch_throughput.png)
+![Batch Size vs Throughput](results/figures/)
 
 **Figure 1:** Mean aggregate inference throughput for different batch sizes.
 
